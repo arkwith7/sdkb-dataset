@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-15T01:02:47.876731+00:00",
+  "generated_at": "2026-08-15T12:30:54.955187+00:00",
   "source_rev": "working-tree",
-  "files": 184,
+  "files": 186,
   "dataset_scrub": {
     "rows": 1000,
     "abstract": 1000,
@@ -9,12 +9,13 @@
     "claims_full_texts": 13685
   },
   "private_docs_excluded": [],
-  "not_allowlisted_count": 497,
+  "not_allowlisted_count": 498,
   "not_allowlisted_by_dir": {
     "(root)": 1,
     ".github": 1,
     "data": 445,
     "docs": 28,
+    "mappings": 1,
     "notebooks": 8,
     "scripts": 14
   },
