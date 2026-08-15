@@ -1,0 +1,195 @@
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix sdkb:    <https://w3id.org/sdkb/> .
+@prefix ont:     <https://w3id.org/sdkb/ont/> .
+@prefix gov:     <https://w3id.org/sdkb/gov/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ═══════════════════════════════════════════════════════════════════
+# SDKB v1.0 SHACL Shapes — Patent Module Release Gate
+#
+# Enforces the structural contract on Patent / IPC / RejectionType /
+# PriorArt instances loaded into the SDKB data graph. Used as a release
+# gate by `scripts/validate_shacl.py --shapes validation/shapes_patent.ttl`.
+# ═══════════════════════════════════════════════════════════════════
+
+# ─── Every Patent must have an application number + office + license ──
+ont:Shape_Patent
+    a sh:NodeShape ;
+    sh:targetClass ont:Patent ;
+    sh:property [
+        sh:path ont:applicationNumber ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Every Patent must declare ont:applicationNumber." ;
+    ] ;
+    sh:property [
+        sh:path ont:patentOffice ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "KR" "US" "JP" "EP" "WO" "CN" "OTHER" ) ;
+        sh:message "patentOffice must be one of KR/US/JP/EP/WO/CN/OTHER." ;
+    ] ;
+    sh:property [
+        sh:path dcterms:license ;
+        sh:minCount 1 ;
+        sh:message "Every Patent must declare dcterms:license (CDLA-Permissive-2.0 for Open Core; KIPRIS terms otherwise)." ;
+    ] ;
+    sh:property [
+        sh:path ont:interpretationType ;
+        sh:in ( "verbatim" "mapped" "author-defined" ) ;
+        sh:message "interpretationType must be one of: verbatim, mapped, author-defined." ;
+    ] ;
+    # 특허의 이름은 발명의 명칭이다. rdfs:label 로 넣는 바람에 제목 1,000건이 질의에
+    # 잡히지 않았고, 선행기술 질의가 사람이 읽을 수 없는 IRI 만 돌려줬다.
+    sh:property [
+        sh:path skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:datatype rdf:langString ;
+        sh:message "Every Patent must have a language-tagged skos:prefLabel (발명의 명칭, not rdfs:label)." ;
+    ] .
+
+# ─── Every RejectedPatent must cite ≥ 1 prior art (examiner-grade) ────
+#
+# 예외 하나가 있고, 그것은 **느슨함이 아니라 이름 붙은 면제**다 (CR-012).
+# B층 확증분할 질의 200건은 심사관 인용을 **실제로 갖고 있으면서 일부러 싣지 않는다** —
+# 그 간선의 집합이 곧 하류의 봉인 정답지(qrel)이고, 상류에 실으면 확증 분할이 그 자리에서
+# 소진된다. 되돌릴 방법이 없다.
+#
+# 그래서 minCount 를 낮추지 않았다. 낮추면 A층 1,000건에 걸려 있던 계약까지 함께 풀리고,
+# 앞으로 인용 없는 거절특허가 조용히 들어와도 게이트가 잡지 못한다.
+# 대신 면제를 **출처(prov)로만** 얻게 했다. 그 출처를 붙일 수 있는 것은 생성기 하나
+# (scripts/build_abox_b_layer_queries.py)뿐이므로, 면제는 손으로 얻을 수 없다.
+ont:Shape_RejectedPatent
+    a sh:NodeShape ;
+    sh:targetClass ont:RejectedPatent ;
+    sh:or (
+        [ sh:path ont:hasPriorArtExaminer ; sh:minCount 1 ]
+        [ sh:path prov:wasGeneratedBy ;
+          sh:hasValue <https://w3id.org/sdkb/data/activity/b_layer_query_ingest> ]
+    ) ;
+    sh:message """Every RejectedPatent must cite at least one examiner-grade prior art, unless it was published by the CR-012 B-layer query ingest (activity/b_layer_query_ingest), which withholds citations by design — they are the downstream sealed qrel.""" ;
+    # 거절유형은 **요구하지 않는다** — SIRP 원천이 1,000건 중 414건에만 담고 있다.
+    # minCount 1 을 걸면 없는 유형을 지어내야 한다 (날조). 값이 있을 때 타입만 검사하고,
+    # 결측 586건은 게이트가 아니라 데이터 프로파일이 보고한다.
+    sh:property [
+        sh:path ont:rejectedFor ;
+        sh:class ont:RejectionType ;
+        sh:message "ont:rejectedFor must point at an ont:RejectionType." ;
+    ] ;
+    sh:property [
+        sh:path ont:examinationStatus ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Every RejectedPatent must declare examinationStatus (거절결정(일반), 거절결정(재심사), …)." ;
+    ] .
+
+# ─── Classification symbols must have notation + broader chain ────────
+ont:Shape_IPCSymbol
+    a sh:NodeShape ;
+    sh:targetClass ont:IPCSymbol ;
+    sh:property [
+        sh:path skos:notation ;
+        sh:minCount 1 ;
+        sh:message "IPCSymbol must have a skos:notation (e.g. 'H01L 21/02')." ;
+    ] .
+
+# ─── PriorArt: 인용하는 쪽만 특허다 ───────────────────────────────────
+# **인용되는 쪽에 ont:Patent 를 요구하지 않는다.** 심사관 인용 2,534건 중 30건은 비특허문헌
+# (논문·표준·매뉴얼)이고, 인용된 문헌은 서지가 없어 ont:Patent 로 타입하지 않는다 — 그것이
+# 설계다. TBox 는 이미 hasPriorArt 의 range 를 제거했는데 이 shape 만 옛 주장을 유지하고
+# 있었고, 그래서 3,485건 전부가 위반으로 잡혔다. **shape 이 틀렸다.**
+ont:Shape_PriorArtSubject
+    a sh:NodeShape ;
+    sh:targetSubjectsOf ont:hasPriorArt ;
+    sh:class ont:Patent ;
+    sh:message "Subject of ont:hasPriorArt must be a Patent." .
+
+# ─── Rejection passages must come with a passage or evidence_url ──────
+# CR-004R (2026-08-02): 새 인스턴스 2,749건은 rejectionPassage/seeAlso 대신 조항 분류
+# (reasonGround·groundClause·noticeRound·noticeType)로 채워진다 — 인용문헌 없이도 "그 조항이
+# 그 회차에 제기됐다"는 사실 자체가 근거다. 기존 branch(passage/seeAlso)는 다른 경로로
+# 채워질 수 있어 그대로 유지하고, or 로 병존시킨다.
+ont:Shape_RejectionReason
+    a sh:NodeShape ;
+    sh:targetClass ont:RejectionReason ;
+    sh:or (
+        [ sh:property [ sh:path ont:rejectionPassage ; sh:minCount 1 ; sh:datatype xsd:string ] ]
+        [ sh:property [ sh:path rdfs:seeAlso          ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path ont:reasonGround ; sh:minCount 1 ] ]
+    ) ;
+    sh:message "RejectionReason must have ont:rejectionPassage (OCR'd text), rdfs:seeAlso (URL), or ont:reasonGround (clause classification, CR-004R)." .
+
+ont:Shape_RejectionReason_Clause
+    a sh:NodeShape ;
+    sh:targetClass ont:RejectionReason ;
+    sh:property [
+        sh:path ont:reasonGround ;
+        sh:minCount 0 ; sh:maxCount 1 ;
+        sh:class ont:RejectionType ;
+        sh:message "ont:reasonGround (있다면) 은 정확히 1개의 ont:RejectionType 을 가리켜야 한다." ;
+    ] ;
+    sh:property [
+        sh:path ont:groundClause ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "ont:groundClause (있다면) 은 문자열 1개여야 한다." ;
+    ] ;
+    sh:property [
+        sh:path ont:noticeRound ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:message "ont:noticeRound (있다면) 은 1 이상의 정수 1개여야 한다." ;
+    ] ;
+    sh:property [
+        sh:path ont:noticeType ;
+        sh:maxCount 1 ;
+        sh:in ( "의견제출통지서"^^xsd:string "거절결정서"^^xsd:string ) ;
+        sh:message "ont:noticeType (있다면) 은 '의견제출통지서'|'거절결정서' 중 하나여야 한다." ;
+    ] .
+
+# ─── Multi-jurisdiction leakage warning shape ─────────────────────────
+# A Patent assigned to a KR-domiciled Organization and tagged as NCT must
+# not be released to a candidate whose jurisdiction is outside KR without
+# explicit approval. This is a SPARQL-based shape because the constraint
+# spans multiple hops and is the structural heart of SDKB-Match's gate.
+gov:Shape_NCTLeakage
+    a sh:NodeShape ;
+    sh:targetClass ont:Patent ;
+    sh:sparql [
+        sh:message "Patent designated as KR NationalCoreTechnology may not be linked to a non-KR target without an approval token." ;
+        sh:select """
+            PREFIX ont: <https://w3id.org/sdkb/ont/>
+            PREFIX gov: <https://w3id.org/sdkb/gov/>
+            SELECT $this
+            WHERE {
+                $this gov:designatedAsNCT ?nct .
+                ?nct gov:requiresGovApproval true .
+                $this ont:hasPriorArt ?other .
+                ?other ont:patentOffice ?office .
+                FILTER (?office != "KR")
+                OPTIONAL { $this ont:approvalToken ?tok . }
+                FILTER (!bound(?tok))
+            }
+        """ ;
+    ] .
+
+# ─── Provenance: every Patent must trace to a source dataset ──────────
+ont:Shape_PatentProvenance
+    a sh:NodeShape ;
+    sh:targetClass ont:Patent ;
+    sh:property [
+        sh:path dcterms:source ;
+        sh:minCount 1 ;
+        sh:message "Patent must declare dcterms:source (KIPRIS Plus API / KIPRIS web / EPO OPS / USPTO PEDS)." ;
+    ] ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:minCount 1 ;
+        sh:message "Patent must declare prov:wasGeneratedBy (ingest activity)." ;
+    ] .

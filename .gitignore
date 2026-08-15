@@ -1,0 +1,134 @@
+# ── Auto-generated artifacts (baseline track) ────────────────────
+data/schema_report.json
+data/nodes.parquet
+data/edges.parquet
+ontology/sdkb-core.ttl
+ontology/sdkb-core-data.ttl
+ontology/sdkb-core-data.jsonld
+ontology/sdkb-abox-experts-problems.ttl
+ontology/sdkb-abox-patents.ttl
+mappings/mapping_candidates.tsv
+
+# ── Auto-generated artifacts (SIRP / patent track) ──────────────
+data/patents/rejected_patents_meta.parquet
+data/patents/ipc_links.parquet
+data/patents/prior_art_edges.parquet
+data/patents/prior_art_pairs.parquet
+data/patents/ingest_report.json
+data/patents/pairs_report.json
+data/problems.parquet
+data/regulatory_scenarios.parquet
+data/problems_report.json
+data/expert_profiles.parquet
+data/experts_report.json
+
+# ── Auto-generated artifacts (curated ExpDataSet track) ─────────
+data/compliance/technology_controls.parquet
+data/compliance/seed_report.json
+data/experts/curated_profiles.parquet
+data/experts/curated_profiles_report.json
+data/experts/curated_ratings.parquet
+data/experts/curated_ratings_pivot.parquet
+data/experts/reliability_report.md
+data/experts/reliability_report.json
+ontology/sdkb-governance-kr-instances.ttl
+ontology/sdkb-governance-us-instances.ttl
+
+# NOTE: data/patents/raw/semiconductor_industry_rejected_patents.jsonl
+# is intentionally NOT ignored in this **private development** repo — it is the canonical
+# dataset and is never redistributed from here.
+#
+# 2026-08-09(CR-015): the public release is a **different tree**, produced by
+# scripts/build_public_release.py, in which abstract / claim1 / claims_full[].text are
+# emptied (schema and identifiers kept) and notebook outputs are stripped.
+# scripts/check_public_release.py must pass before anything is pushed publicly.
+# Decision (B) — metadata + ground truth + link-only. Rationale: the paper's §10.3 already
+# states KIPRIS full text cannot be redistributed. See docs/dataset_rejected_patents_card.md §6.
+
+# ── Prior-art collected assets (Phase A~D, 2026-05-16) ──
+# Bulk / derived: gitignored. 2026-08-09(CR-016) 전에는 옆 저장소에서 rsync 로 받았고
+# (scripts/sync_paper_data_assets.sh — 삭제됨) 그래서 그 디렉터리가 없는 사람은 채울 수
+# 없었다. 지금은 `make refetch-fulltext` 로 KIPRIS 에서 다시 받는다.
+data/patents/fulltext/
+
+# ── 흡수된 수집기의 작업 디렉터리 (2026-08-09 · CR-016 §4) ──
+# 이관된 수집 스크립트들은 원 저장소의 레이아웃(data/processed/)을 그대로 쓴다.
+# 경로 상수를 고쳐 쓰지 않은 이유는 수집 규칙을 갈리게 하지 않기 위해서다 —
+# 재인출본이 정본과 달라지면 복원 대조(sha256)가 무의미해진다.
+# 정본은 data/patents/raw/ 이고, 그쪽으로 옮기는 것은 refetch 스크립트의 몫이다.
+data/processed/
+
+# 청구항 feature · 인용문헌 보강 — KIPRIS 비재배포 청구항/초록 원문 포함 (§1.5)
+data/patents/cited_enriched/
+data/interim/claim_features.jsonl
+data/interim/llm_claim_cache.sqlite
+data/interim/reextracted_judgments.jsonl
+data/interim/rejection_reasons.jsonl
+ontology/sdkb-abox-claim-features.ttl
+ontology/sdkb-abox-prior-art.ttl
+
+# ── CR-012 · B층 확증분할 질의 (하류 논문 평가자산) ────────────────
+# 이 저장소는 공개되는 기반 온톨로지이고, 이 둘은 반도체 도메인 지식이 아니라
+# **논문 확증분할의 봉인 질의**다. 그래서 도메인 자산과 다르게 취급한다 —
+# 원문은 KIPRIS 비재배포 조건이기도 하다(§1.5).
+# 재현 경로는 커밋된 것으로 닫힌다: 하류 이관 파일(sha256 대조 강제) + 수집기 +
+# 생성기 + 집계 리포트. 논문 종료 후 공개본 정리 시 이 두 줄이 경계선이다.
+data/patents/b_layer_queries_raw.jsonl
+ontology/sdkb-abox-b-layer-queries.ttl
+data/patents/fulltext_corpus.parquet
+data/patents/citation_resolution_full_cache.json
+# Kept committed (small GT / vocab): rejection_decisions/structured, _index.jsonl,
+# data/external/device_vocab — intentionally NOT ignored (ground truth).
+
+# ── Notebook execution outputs ───────────────────────────────────
+.ipynb_checkpoints/
+notebooks/**/*.nbconvert.ipynb
+
+# ── Visualization build output (deployed by CI to GitHub Pages) ──
+site/
+
+# ── Virtual environment ──────────────────────────────────────────
+.venv/
+
+# ── PDF planning documents (not for distribution) ───────────────
+*.pdf
+
+# ── Lab-internal accounting docs (not for public distribution) ───
+docs/expdataset_alignment.md
+docs/project/plan_amendment_v3.md
+docs/archive/
+
+# ── Archived internal docs — local reference only, never published ──
+# 공개 트리는 `git ls-files` 로 만들어지므로(scripts/build_public_release.py)
+# 여기 들어온 것은 자동으로 공개본에서 빠진다. 근거·판정: docs/public_release_readiness_review.md §1
+# 되살리려면 파일을 docs/ 아래 제자리로 옮긴다. `git add -f` 로 예외를 만들지 않는다.
+docs/_private/
+
+# ── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── IDE ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── OS ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Environment-specific ─────────────────────────────────────────
+.env
+
+# KIPRIS 응답 캐시 (재수집 방지용 로컬 캐시 — 산출물 아님)
+data/patents/.kipris_cache.sqlite
+
+# ── B층 확증분할 식별자 목록 (논문 평가자산 · 원고 §10.3 하네스 비공개) ──
+# 2026-08-09(CR-016): 스크립트 기본 경로를 개인 홈의 논문 저장소에서 이 자리로 옮겼다.
+# 파일 자체는 커밋하지 않는다 — 평가자산이라 공개본에 들어가면 안 된다. 공개 트리
+# 생성기는 `git ls-files` 만 복사하므로 여기 두는 것만으로 공개에서 제외된다.
+data/patents/b_layer_cited_ids.txt
+data/patents/b_layer_query_ids.txt

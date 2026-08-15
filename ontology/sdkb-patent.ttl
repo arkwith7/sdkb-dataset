@@ -1,0 +1,628 @@
+@prefix sdkb:    <https://w3id.org/sdkb/> .
+@prefix ont:     <https://w3id.org/sdkb/ont/> .
+@prefix data:    <https://w3id.org/sdkb/data/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ═══════════════════════════════════════════════════════════════════
+# SDKB v1.0 — Patent Module (sdkb-patent.ttl)
+#
+# Supports both SDKB-Match PriorArt (prior-art retrieval evaluation) and
+# Prof. Shin's signature patent-analytics use cases (novelty-focused
+# patent mapping, topic-based forecasting, emerging-tech identification).
+#
+# Instances are loaded from data/patents/rejected_patents_meta.parquet
+# (SIRP — Semiconductor Industry Rejected Patents, 773 records).
+# ═══════════════════════════════════════════════════════════════════
+
+<https://w3id.org/sdkb/ont/patent>
+    a owl:Ontology ;
+    rdfs:label "SDKB Patent Module"@en ;
+    rdfs:comment "Patent, classification taxonomy, rejection reason, and prior-art citation model. Aligned with Prof. Shin Juneseuk's patent-analytics research line."@en ;
+    owl:versionInfo "1.0.0-dev" ;
+    dcterms:license <https://spdx.org/licenses/CDLA-Permissive-2.0.html> ;
+    owl:imports <https://w3id.org/sdkb/ont> .
+
+# ── CLASSES ────────────────────────────────────────────────────────
+
+ont:Patent
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Patent"@en ;
+    rdfs:comment "A patent application (target of examination) or a granted patent. Subclasses encode examination outcome."@en .
+
+ont:RejectedPatent
+    a owl:Class ;
+    rdfs:subClassOf ont:Patent ;
+    rdfs:label "Rejected Patent"@en ;
+    rdfs:comment "A patent application that received a final rejection decision (거절결정)."@en .
+
+ont:GrantedPatent
+    a owl:Class ;
+    rdfs:subClassOf ont:Patent ;
+    rdfs:label "Granted Patent"@en ;
+    rdfs:comment "A patent that has been granted/registered."@en .
+
+ont:PendingPatent
+    a owl:Class ;
+    rdfs:subClassOf ont:Patent ;
+    rdfs:label "Pending Patent"@en ;
+    rdfs:comment "A patent application currently under examination."@en .
+
+ont:CitedPatent
+    a owl:Class ;
+    rdfs:subClassOf ont:Patent ;
+    rdfs:label "Cited Prior-Art Patent"@en ;
+    rdfs:comment "심사관이 선행기술로 인용한 특허 문헌. 서지(출원번호)가 불완전할 수 있어 완화 shape 로 검증한다 — 우리 코퍼스의 심사대상 특허(SIRP/G1/G2)와 구분되는 표식. 비특허문헌(NPL)은 이 클래스가 아니다."@ko .
+
+ont:ClassificationSymbol
+    a owl:Class ;
+    rdfs:label "Classification Symbol"@en ;
+    rdfs:comment "Abstract superclass for patent classification codes (IPC/CPC/F-term)."@en .
+
+ont:IPCSymbol
+    a owl:Class ;
+    rdfs:subClassOf ont:ClassificationSymbol ;
+    rdfs:label "IPC Symbol"@en ;
+    rdfs:comment "An International Patent Classification (IPC) code, e.g. H01L 21/02."@en .
+
+ont:CPCSymbol
+    a owl:Class ;
+    rdfs:subClassOf ont:ClassificationSymbol ;
+    rdfs:label "CPC Symbol"@en ;
+    rdfs:comment "A Cooperative Patent Classification (CPC) code, e.g. H01L21/02063."@en .
+
+ont:FTermFacet
+    a owl:Class ;
+    rdfs:subClassOf ont:ClassificationSymbol ;
+    rdfs:label "F-term Facet"@en ;
+    rdfs:comment "A JPO F-term faceted classification, e.g. 5F045 (thin-film deposition view)."@en .
+
+ont:TopicCluster
+    a owl:Class ;
+    rdfs:label "Topic Cluster"@en ;
+    rdfs:comment "A topic cluster derived from patent abstract/claim NLP. Supports topic-based forecasting (Shin et al., TFSC 2017)."@en .
+
+ont:NoveltyScore
+    a owl:Class ;
+    rdfs:label "Novelty Score"@en ;
+    rdfs:comment "A novelty assessment attached to a patent. Supports novelty-focused patent mapping (Lee, Kang, Shin TFSC 2015)."@en .
+
+ont:RejectionReason
+    a owl:Class ;
+    rdfs:label "Rejection Reason"@en ;
+    rdfs:comment "A categorical reason for patent rejection, derived from KIPO/USPTO/JPO examination guidelines."@en .
+
+ont:RejectionType
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Rejection Type"@en ;
+    rdfs:comment "Controlled vocabulary for rejection categories."@en .
+
+# ── REJECTION TYPE INDIVIDUALS (controlled vocabulary) ──────────────
+
+ont:Rejection_Novelty
+    a ont:RejectionType ;
+    skos:prefLabel "신규성 부정 (lack of novelty)"@ko, "Lack of Novelty"@en ;
+    skos:notation "KIPO-29-1" ;
+    skos:scopeNote "특허법 제29조 제1항 — 출원 전 공지·공연된 발명"@ko .
+
+ont:Rejection_Inventiveness
+    a ont:RejectionType ;
+    skos:prefLabel "진보성 부정 (lack of inventive step)"@ko, "Lack of Inventive Step"@en ;
+    skos:notation "KIPO-29-2" ;
+    skos:scopeNote "특허법 제29조 제2항 — 통상의 기술자에 의해 용이하게 발명"@ko .
+
+ont:Rejection_ClarityScope
+    a ont:RejectionType ;
+    skos:prefLabel "청구범위 불명확 (claim indefiniteness)"@ko, "Indefinite Claim Scope"@en ;
+    skos:notation "KIPO-42" ;
+    skos:scopeNote "특허법 제42조 — 청구범위 기재불비"@ko .
+
+ont:Rejection_Disclosure
+    a ont:RejectionType ;
+    skos:prefLabel "기재불비 (insufficient disclosure)"@ko, "Insufficient Disclosure"@en ;
+    skos:notation "KIPO-42-3" .
+
+ont:Rejection_Eligibility
+    a ont:RejectionType ;
+    skos:prefLabel "발명의 정의 미충족 (non-statutory subject matter)"@ko, "Non-Statutory Subject Matter"@en ;
+    skos:notation "KIPO-2" .
+
+# 항(項) 단위 신규 개체 7개 (CR-004R · D-06 · 2026-07-30 법령 원문 대조 확정).
+# 위 5개의 IRI·의미·notation 은 손대지 않는다 — 겹치는 영역(Rejection_ClarityScope)이 있어도
+# 그대로 둔다. 호(號)는 개체로 만들지 않고 ont:groundClause 문자열(예 "42-4-2")에 보존한다.
+# 제42조 제5항(2014.6.11. 삭제)은 개체를 발행하지 않는다 — 확인 못한 의미에 이름을 붙이지 않는다.
+ont:Rejection_ClaimRequirements
+    a ont:RejectionType ;
+    skos:prefLabel "청구범위 기재요건 위반 (claim drafting requirements)"@ko, "Claim Drafting Requirements"@en ;
+    skos:notation "KIPO-42-4" ;
+    skos:scopeNote "특허법 제42조 제4항 — 청구범위가 발명의 설명에 의해 뒷받침(1호)되고 명확하고 간결하게(2호) 기재될 것"@ko .
+
+ont:Rejection_UnityOfInvention
+    a ont:RejectionType ;
+    skos:prefLabel "1발명1출원 위반 (unity of invention)"@ko, "Unity of Invention"@en ;
+    skos:notation "KIPO-45" ;
+    skos:scopeNote "특허법 제45조 — 하나의 특허출원의 범위(하나의 발명마다 하나의 특허출원)"@ko .
+
+ont:Rejection_ClaimFormat
+    a ont:RejectionType ;
+    skos:prefLabel "청구범위 기재방법 위반 (claim format)"@ko, "Claim Format"@en ;
+    skos:notation "KIPO-42-8" ;
+    skos:scopeNote "특허법 제42조 제8항 — 청구범위의 기재방법에 관하여 필요한 사항은 대통령령으로 정한다"@ko .
+
+ont:Rejection_SameDayFiling
+    a ont:RejectionType ;
+    skos:prefLabel "동일자 출원 협의불성립 (same-day filing)"@ko, "Same-Day Filing"@en ;
+    skos:notation "KIPO-36-2" ;
+    skos:scopeNote "특허법 제36조 제2항 — 동일한 발명에 대해 같은 날 둘 이상 출원 시 협의 불성립"@ko .
+
+ont:Rejection_ExpandedPriorFiling
+    a ont:RejectionType ;
+    skos:prefLabel "확대된 선출원 (expanded prior filing)"@ko, "Expanded Prior Filing"@en ;
+    skos:notation "KIPO-29-3" ;
+    skos:scopeNote "특허법 제29조 제3항 — 동일한 다른 특허출원과의 관계(확대된 선출원)"@ko .
+
+ont:Rejection_AmendmentScope
+    a ont:RejectionType ;
+    skos:prefLabel "보정범위 위반 (amendment scope)"@ko, "Amendment Scope"@en ;
+    skos:notation "KIPO-47-2" ;
+    skos:scopeNote "특허법 제47조 제2항 — 보정은 최초 첨부 명세서·도면에 기재된 범위 내에서"@ko .
+
+ont:Rejection_DivisionalScope
+    a ont:RejectionType ;
+    skos:prefLabel "분할출원 범위 위반 (divisional application scope)"@ko, "Divisional Application Scope"@en ;
+    skos:notation "KIPO-52-1" ;
+    skos:scopeNote "특허법 제52조 제1항 — 분할출원의 범위"@ko .
+
+# ── OBJECT PROPERTIES ──────────────────────────────────────────────
+
+ont:hasClassification
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:ClassificationSymbol ;
+    rdfs:label "has classification"@en ;
+    rdfs:comment "Links a patent to an IPC/CPC/F-term classification symbol."@en .
+
+ont:hasIPC
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf ont:hasClassification ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:IPCSymbol ;
+    rdfs:label "has IPC"@en ;
+    rdfs:comment "Links a patent to an IPC symbol assigned to it. Subproperty of hasClassification. A patent normally carries several."@en .
+
+ont:hasCPC
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf ont:hasClassification ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:CPCSymbol ;
+    rdfs:label "has CPC"@en ;
+    rdfs:comment "Links a patent to a CPC symbol assigned to it. Subproperty of hasClassification; use hasIPC or hasFTerm for the other two schemes."@en .
+
+ont:hasFTerm
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf ont:hasClassification ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:FTermFacet ;
+    rdfs:label "has F-term"@en ;
+    rdfs:comment "Links a patent to a JPO F-term facet assigned to it. Subproperty of hasClassification. Present only for records whose bibliographic source supplied F-terms."@en .
+
+ont:cites
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:Patent ;
+    rdfs:label "cites"@en ;
+    rdfs:comment "Generic citation relation between two patents."@en .
+
+# NOTE: hasPriorArt is deliberately NOT a sub-property of ont:cites, and carries
+# no rdfs:range. Prior art is not always a patent — 30 of the 2,534 examiner
+# citations in the SIRP corpus are non-patent literature (papers, standards).
+# Declaring range ont:Patent (or inheriting it from ont:cites, whose range is
+# ont:Patent) would entail that those documents are patents. That is false, and
+# it would additionally force every cited document to satisfy the Patent shape
+# (application number + filing date) — bibliography we do not have for cited docs.
+ont:hasPriorArt
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:label "has prior art"@en ;
+    rdfs:comment "Links a patent (typically rejected/contested) to a prior-art document cited against it. The document may be a patent or non-patent literature. Sub-properties distinguish examiner- vs. applicant-disclosed."@en .
+
+ont:hasPriorArtExaminer
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf ont:hasPriorArt ;
+    rdfs:domain ont:Patent ;
+    rdfs:label "has prior art (examiner-cited)"@en ;
+    rdfs:comment "Prior art cited by the patent examiner in the office action. Ground-truth signal for prior-art retrieval evaluation."@en .
+
+ont:hasPriorArtApplicant
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf ont:hasPriorArt ;
+    rdfs:domain ont:Patent ;
+    rdfs:label "has prior art (applicant-disclosed)"@en ;
+    rdfs:comment "Prior art disclosed by the applicant, as distinct from prior art found and cited by the examiner (hasPriorArtExaminer). Subproperty of hasPriorArt. **No rdfs:range is declared** — the object may be a Patent node or a non-patent literature node, and constraining it would exclude the latter."@en .
+
+ont:rejectedFor
+    a owl:ObjectProperty ;
+    rdfs:domain ont:RejectedPatent ;
+    rdfs:range ont:RejectionType ;
+    rdfs:label "rejected for"@en ;
+    rdfs:comment "Reason category for the rejection decision."@en .
+
+ont:rejectionEvidence
+    a owl:ObjectProperty ;
+    rdfs:domain ont:RejectedPatent ;
+    rdfs:range ont:RejectionReason ;
+    rdfs:label "rejection evidence"@en ;
+    rdfs:comment "A specific RejectionReason instance carrying the cited passage / reasoning."@en .
+
+ont:reasonGround
+    a owl:ObjectProperty ;
+    rdfs:domain ont:RejectionReason ;
+    rdfs:range ont:RejectionType ;
+    rdfs:label "reason ground"@en ;
+    rdfs:comment "조(항) 단위 근거 분류. RejectionReason 인스턴스마다 정확히 1개(CR-004R)."@en .
+
+ont:realizesProcess
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:Process ;
+    rdfs:label "realizes process"@en ;
+    rdfs:comment "Links a patent to the SDKB Process it concerns (joins patent module to manufacturing core)."@en .
+
+ont:realizesEquipmentClass
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:EquipmentClass ;
+    rdfs:label "realizes equipment class"@en ;
+    rdfs:comment "Links a patent to the class of equipment its disclosure realizes or presupposes. Links to a class, not an equipment instance — a patent describes a kind of tool, not a serial number."@en .
+
+# domain 은 Patent ∪ Problem 이다. 특허만이 아니라 소부장 실문제(ont:Problem)도 소재를
+# 다루고 실패모드를 드러내며 토픽에 걸린다 — experts/problems A-Box 가 이 세 술어를
+# Problem 주어로 쓴다(involvesMaterial 33 · exhibitsFailureMode 8 · relatedToTopic 1).
+# domain 을 Patent 로 좁혀두면 RDFS domain 함의가 그 Problem 들을 Patent 로 만든다.
+ont:involvesMaterial
+    a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ont:Patent ont:Problem ) ] ;
+    rdfs:range ont:Material ;
+    rdfs:label "involves material"@en ;
+    rdfs:comment "Relates a Patent or a Problem to a material it involves. The domain is deliberately the union of the two: the same predicate is used with Problem as subject, and narrowing the domain to Patent would make RDFS domain entailment type those Problems as patents."@en .
+
+ont:assignedTo
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:Organization ;
+    rdfs:label "assigned to"@en ;
+    rdfs:comment "Current assignee of the patent (rights holder)."@en .
+
+ont:broaderClassification
+    a owl:ObjectProperty, owl:TransitiveProperty ;
+    rdfs:domain ont:ClassificationSymbol ;
+    rdfs:range ont:ClassificationSymbol ;
+    rdfs:label "broader classification"@en ;
+    rdfs:comment "Hierarchical parent within IPC/CPC tree (e.g. H01L 21/02 → H01L 21 → H01L → H)."@en .
+
+# ── DATATYPE PROPERTIES ────────────────────────────────────────────
+
+ont:applicationNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "application number"@en ;
+    rdfs:comment "Application number as issued by the patent office."@en .
+
+ont:publicationNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "publication number"@en ;
+    rdfs:comment "The publication (laid-open) number of the application. Distinct from registrationNumber, which exists only if the application was granted."@en .
+
+ont:registrationNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "registration number"@en ;
+    rdfs:comment "The granted-patent number. Empty for a refused application — most records in this dataset have no value here, and its absence is information, not a gap."@en .
+
+ont:filingDate
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:date ;
+    rdfs:label "filing date"@en ;
+    rdfs:comment "The date the application was filed. **Distinct from publicationDate and rejectionDate** — the three are different events and mixing them invalidates any time-series analysis. Filing is the priority-relevant date."@en .
+
+ont:publicationDate
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:date ;
+    rdfs:label "publication date"@en ;
+    rdfs:comment "The date the application was laid open (publication), not the filing date and not the registration date. This is the date that decides whether a document is citable prior art against a later application."@en .
+
+ont:rejectionDate
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:RejectedPatent ;
+    rdfs:range xsd:date ;
+    rdfs:label "rejection date"@en ;
+    rdfs:comment "The date the examiner's decision of refusal was issued. Domain is RejectedPatent, so this predicate is present only where a refusal actually occurred."@en .
+
+ont:patentOffice
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "patent office"@en ;
+    rdfs:comment "Issuing office code (KR / US / JP / EP / WO / CN)."@en .
+
+ont:examinationStatus
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "examination status"@en ;
+    rdfs:comment "거절결정(일반) / 거절결정(재심사) / 원결정유지(심사전치) / 취소환송후 재거절결정 / 등록 / 심사중 등."@en .
+
+ont:abstractText
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "abstract text"@en ;
+    rdfs:comment "Subject to source license — may be Link-Only depending on KIPRIS terms."@en .
+
+ont:firstClaimText
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "first claim text"@en ;
+    rdfs:comment "Subject to source license — may be Link-Only depending on KIPRIS terms."@en .
+
+ont:claimText
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "claim text"@en ;
+    rdfs:comment "Full text of a single claim, one triple per claim with the leading claim number preserved (e.g. \"1. ...\"). Enables IP-R&D FTO (freedom-to-operate) analysis without re-fetching — self-contained claim coverage. firstClaimText remains the independent-claim-1 shortcut. Subject to source license — Link-Only if KIPRIS terms require."@en .
+
+ont:claimCount
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:integer ;
+    rdfs:label "claim count"@en ;
+    rdfs:comment "Number of claims in the patent (KIPRIS claimCount). A claimText triple count below this signals claims not yet loaded."@en .
+
+ont:processFamily
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "process family"@en ;
+    rdfs:comment "Collected process-family tag: etch / deposition / metallization / photo / implant / oxidation_diffusion / memory / packaging / ..."@en .
+
+ont:valueChainStage
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range xsd:string ;
+    rdfs:label "value chain stage"@en ;
+    rdfs:comment "Multi-valued: process | material | equipment | device | component."@en .
+
+ont:noveltyValue
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:NoveltyScore ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "novelty value"@en ;
+    rdfs:comment "The numeric value carried by a NoveltyScore node. The score is reified so that the value can be qualified by its provenance; do not read a value without reading which scorer produced it."@en .
+
+ont:noveltyMethod
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:NoveltyScore ;
+    rdfs:range xsd:string ;
+    rdfs:label "novelty method"@en ;
+    rdfs:comment "Method tag: lexical | embedding | citation-based | hybrid."@en .
+
+ont:rejectionPassage
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:RejectionReason ;
+    rdfs:range xsd:string ;
+    rdfs:label "rejection passage"@en ;
+    rdfs:comment "Quoted reasoning text from the rejection decision (거절결정서). May be empty for KIPRIS Plus API records that do not expose OCR'd passages."@en .
+
+ont:groundClause
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:RejectionReason ;
+    rdfs:range xsd:string ;
+    rdfs:label "ground clause"@en ;
+    rdfs:comment "조-항-호 문자열 (예 '42-4-2'). ont:reasonGround 가 항 단위로 뭉개는 호(號) 구분을 보존한다(CR-004R)."@en .
+
+ont:noticeRound
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:RejectionReason ;
+    rdfs:range xsd:integer ;
+    rdfs:label "notice round"@en ;
+    rdfs:comment "해당 출원 내 통지 문서의 발송일자 오름차순 순번(1부터). 결정성: 동일 발송일자는 발송번호 오름차순으로 재정렬(CR-004R)."@en .
+
+ont:noticeType
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:RejectionReason ;
+    rdfs:range xsd:string ;
+    rdfs:label "notice type"@en ;
+    rdfs:comment "'의견제출통지서' 또는 '거절결정서' (CR-004R)."@en .
+
+ont:noticeDate
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:RejectionReason ;
+    rdfs:range xsd:date ;
+    rdfs:label "notice date"@en ;
+    rdfs:comment "통지 문서의 발송일자(CR-004R)."@en .
+
+# ── PATENT → DOMAIN LINKS (patent A-Box lift) ──────────────────────
+# build_abox_patents.py 가 특허를 도메인 개념에 잇는 술어들. 이전에는 이 술어들이
+# ABox 파일 안에서 인라인 선언되어 있었다 — TBox 를 읽는 소비자에게는 존재하지 않는
+# 술어였고, 추론기·SHACL 이 검증할 수 없었다. 공정 링크는 별도 술어를 만들지 않고
+# 이미 정의된 ont:realizesProcess / ont:involvesMaterial / ont:realizesEquipmentClass 를 쓴다.
+
+ont:concernsSkill
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:Skill ;
+    rdfs:label "concerns skill"@en ;
+    rdfs:comment "Links a patent to a Skill (competency) implicated by its disclosure."@en .
+
+ont:concernsEquipment
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range [ a owl:Class ; owl:unionOf ( ont:Equipment ont:EquipmentClass ont:Vendor ont:Metrology ) ] ;
+    rdfs:label "concerns equipment"@en ;
+    rdfs:comment "Links a patent to equipment-side concepts (instance, class, vendor, or metrology method)."@en .
+
+ont:concernsDevice
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:Device ;
+    rdfs:label "concerns device"@en ;
+    rdfs:comment "Links a patent to a Device/product architecture (DRAM, BGA, CMOS image sensor …)."@en .
+
+ont:concernsTechnologyNode
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ;
+    rdfs:range ont:TechnologyNode ;
+    rdfs:label "concerns technology node"@en ;
+    rdfs:comment "Links a patent to a technology generation (7nm, 3nm …). Kept distinct from ont:realizesProcess, whose range is ont:Process."@en .
+
+ont:exhibitsFailureMode
+    a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ont:Patent ont:Problem ) ] ;
+    rdfs:range ont:FailureMode ;
+    rdfs:label "exhibits failure mode"@en ;
+    rdfs:comment "Links a patent to a FailureMode it addresses or discloses."@en .
+
+ont:relatedToTopic
+    a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( ont:Patent ont:Problem ) ] ;
+    rdfs:range [ a owl:Class ; owl:unionOf ( ont:RootCause ont:Mitigation ont:TopicCluster ) ] ;
+    rdfs:label "related to topic"@en ;
+    rdfs:comment "Weak link from a patent to a RootCause / Mitigation / TopicCluster. Deliberately loose — used when free-text extraction cannot commit to a stronger relation."@en .
+
+# ── CLAIM FEATURE & PRIOR-ART JUDGMENT (중심축) ─────────────────────
+# 신규성/진보성 판단의 실제 단위는 청구항의 한정요소(feature)다. 이 계층은 청구항을
+# feature 로 분해(규칙+로컬 LLM)하고 개념에 정규화하며, 심사관의 선행기술 판단을
+# n-항 관계(어느 청구항 · 어느 선행기술 · 어느 근거)로 실체화한다. 기존 어휘
+# (ont:claimText · ont:RejectionType 개체 · ont:hasPriorArtExaminer)는 재사용하고 덧붙일 뿐이다.
+
+ont:Claim
+    a owl:Class ;
+    rdfs:label "Patent Claim"@en ;
+    rdfs:comment "특허의 청구항 1건. 독립항이 신규성/진보성 대비의 단위다."@ko .
+
+ont:ClaimFeature
+    a owl:Class ;
+    rdfs:label "Claim Feature (Limitation)"@en ;
+    rdfs:comment "청구항을 구성하는 한정요소 하나. 규칙+LLM 분해의 산출 단위이며 개념에 정규화된다."@ko .
+
+ont:PriorArtJudgment
+    a owl:Class ;
+    rdfs:label "Prior-Art Judgment"@en ;
+    rdfs:comment "심사관의 선행기술 판단 1건(n-항 관계의 실체화): 어느 청구항이 · 어느 선행기술에 대해 · 어느 근거로 거절됐는가. 무효심판 등 타 도메인에도 재사용되는 패턴."@en .
+
+# 청구항 구조
+ont:hasClaim
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ; rdfs:range ont:Claim ;
+    rdfs:label "has claim"@en ;
+    rdfs:comment "Links a patent to one of its claims. Claim order is carried by claimNumber, not by triple order."@en .
+
+ont:claimNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Claim ; rdfs:range xsd:integer ;
+    rdfs:label "claim number"@en ;
+    rdfs:comment "The claim's own number as printed in the patent (1-based). Determines claim order; triple order does not."@en .
+
+ont:isIndependent
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:Claim ; rdfs:range xsd:boolean ;
+    rdfs:label "is independent claim"@en ;
+    rdfs:comment "True for an independent claim, false for a dependent one. Independent claims are the unit used as a retrieval query in prior-art work; dependent claims inherit their parent's features."@en .
+
+ont:dependsOnClaim
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Claim ; rdfs:range ont:Claim ;
+    rdfs:label "depends on claim"@en ;
+    rdfs:comment "종속항이 한정하는 부모 청구항. 완전 한정요소집합 = 부모 features ∪ 종속 추가 features(질의/추론으로 계산). 진보성(§29②) 판단의 added-feature 는 여기에 있다."@ko .
+
+ont:hasFeature
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Claim ; rdfs:range ont:ClaimFeature ;
+    rdfs:label "has feature"@en ;
+    rdfs:comment "Links a claim to one of the technical features it recites. Subject is the Claim, not the Patent — a feature belongs to a specific claim. Recitation order is carried by featureSeq."@en .
+
+ont:featureSeq
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:ClaimFeature ; rdfs:range xsd:integer ;
+    rdfs:label "feature sequence"@en ;
+    rdfs:comment "Position of a feature within the sequence recited by its claim (1-based). Preserves recitation order, which matters for all-elements comparison."@en .
+
+ont:featureText
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:ClaimFeature ; rdfs:range xsd:string ;
+    rdfs:label "feature text"@en ;
+    rdfs:comment "한정요소 원문. KIPRIS 학술이용·비재배포 — dcterms:license 로 출처별 표기."@ko .
+
+ont:dependsOnFeature
+    a owl:ObjectProperty ;
+    rdfs:domain ont:ClaimFeature ; rdfs:range ont:ClaimFeature ;
+    rdfs:label "depends on feature"@en ;
+    rdfs:comment "'상기 X'(said X) 역참조 — 요소 간 의존."@ko .
+
+ont:decompositionMethod
+    a owl:DatatypeProperty ;
+    rdfs:domain ont:ClaimFeature ; rdfs:range xsd:string ;
+    rdfs:label "decomposition method"@en ;
+    rdfs:comment "rule | llm — 규칙 결정적 산출인지 로컬 LLM 재분해 산출인지(정직성)."@ko .
+
+# feature → 개념 (정규화 층). range 는 SDKB 개념 클래스들의 합집합.
+ont:featureConcept
+    a owl:ObjectProperty ;
+    rdfs:domain ont:ClaimFeature ;
+    rdfs:range [ a owl:Class ; owl:unionOf
+        ( ont:Process ont:SubProcess ont:Device ont:Material
+          ont:Skill ont:FailureMode ont:EquipmentClass ) ] ;
+    rdfs:label "feature concept"@en ;
+    rdfs:comment "한정요소가 지시하는 SDKB 개념. prefLabel/altLabel 브리지로 결정적 매핑. 언어중립 대비의 축."@ko .
+
+# 거절-판단 (reification)
+ont:hasJudgment
+    a owl:ObjectProperty ;
+    rdfs:domain ont:Patent ; rdfs:range ont:PriorArtJudgment ;
+    rdfs:label "has judgment"@en ;
+    rdfs:comment "Links a patent to an examiner's recorded judgment about a piece of prior art cited against it. The judgment is reified as its own node because it carries the ground and the cited document together."@en .
+
+ont:aboutClaim
+    a owl:ObjectProperty ;
+    rdfs:domain ont:PriorArtJudgment ; rdfs:range ont:Claim ;
+    rdfs:label "about claim"@en ;
+    rdfs:comment "거절된 대상 청구항(evidence_v2 target_claims)."@ko .
+
+# overPriorArt 는 range 를 두지 않는다 — 인용문헌은 특허가 아닐 수 있다(NPL). hasPriorArt 와 같은 이유.
+ont:overPriorArt
+    a owl:ObjectProperty ;
+    rdfs:domain ont:PriorArtJudgment ;
+    rdfs:label "over prior art"@en ;
+    rdfs:comment "대비된 인용 선행기술(특허 또는 비특허문헌)."@en .
+
+ont:onGround
+    a owl:ObjectProperty ;
+    rdfs:domain ont:PriorArtJudgment ; rdfs:range ont:RejectionType ;
+    rdfs:label "on ground"@en ;
+    rdfs:comment "판단 근거 = 기존 개체 Rejection_Novelty(§29①) / Rejection_Inventiveness(§29②)."@ko .
+
+ont:overlappingFeature
+    a owl:ObjectProperty ;
+    rdfs:domain ont:PriorArtJudgment ; rdfs:range ont:ClaimFeature ;
+    rdfs:label "overlapping feature"@en ;
+    rdfs:comment "겹친다고 도출된 한정요소(라벨 아님 — 양쪽 feature 개념 오버랩의 제안, 청구항단위 판단으로 검증)."@ko .
+
+# ── ANNOTATION PROPERTIES (reused from core) ───────────────────────
+# Patent instances reuse: ont:interpretationType, ont:validationRequired,
+# dcterms:source, dcterms:license, dcterms:bibliographicCitation,
+# prov:wasGeneratedBy, prov:wasDerivedFrom, prov:wasAttributedTo.

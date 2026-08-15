@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+title: "SDKB v1.0 — Semiconductor Domain Knowledge Base"
+message: "If you use this dataset, please cite both SDKB and the original sources (KIPRIS, SemiKong, SemicONTO, MatKG, BIS/NIST/ECHA)."
+type: dataset
+authors:
+  - family-names: Park
+    given-names: HyoungSik
+    affiliation: "Sungkyunkwan University, Graduate School of Management of Technology"
+    email: richphs@skku.edu
+    orcid: ""
+contact:
+  - family-names: Park
+    given-names: HyoungSik
+    email: richphs@skku.edu
+version: "1.0.0-dev"
+date-released: "2026-05-12"
+license: CDLA-Permissive-2.0
+repository-code: "https://github.com/arkwith7/sdkb-dataset"
+abstract: >-
+  SDKB is a provenance-grounded curation knowledge base that serves as the
+  semiconductor-domain data trunk for the SKKU Quantitative Technology
+  Management Lab's research agenda — patent/market/industry-driven tech
+  foresight, emerging-technology opportunity discovery, SME innovation and
+  expert matching, and interactive technology/business data visualization.
+  It integrates manufacturing process, equipment, material, FMEA, and
+  multi-jurisdiction regulatory layers with patent classification, RBV,
+  commercialization, and foresight modules. The Semiconductor Industry
+  Rejected Patents (SIRP) dataset adds 773 examiner-grounded prior-art
+  labels supporting SDKB-Match (the SDKB Matching Layer for semiconductor
+  SME ↔ expert and patent ↔ prior-art matching), the first concrete
+  implementation of the lab's compliance-aware semantic collaboration vision.
+keywords:
+  - semiconductor
+  - ontology
+  - knowledge-graph
+  - patent-analytics
+  - prior-art-retrieval
+  - expert-matching
+  - technology-management
+  - FMEA
+  - foresight
+  - export-control
+references:
+  - type: book
+    authors:
+      - family-names: Shin
+        given-names: Juneseuk
+    title: "(Advisor) Quantitative Management of Technology Lab, SKKU MOT"
+    notes: "Academic advisor for this work."

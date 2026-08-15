@@ -1,0 +1,93 @@
+[project]
+name = "sdkb"
+version = "1.0.0-dev"
+description = "SDKB v1.0 — Semiconductor Domain Knowledge Base: Provenance-grounded curation ontology"
+authors = [
+    { name = "Park HyoungSik", email = "parkhs@g.skku.edu" },
+]
+readme = "README.md"
+license = { text = "CDLA-Permissive-2.0" }
+requires-python = ">=3.11"
+keywords = ["semiconductor", "ontology", "knowledge-graph", "FMEA", "foresight"]
+
+dependencies = [
+    # RDF / OWL / SHACL
+    "rdflib>=7.0",
+    "pyshacl>=0.26",
+    # Data processing
+    "pandas>=2.2",
+    "pyarrow>=16.0",
+    # Alignment (lexical)
+    "rapidfuzz>=3.9",
+    # JSON Schema validation
+    "jsonschema>=4.22",
+    # NumPy (used by ranking baseline)
+    "numpy>=1.26",
+    # HTTP — llm_claim_validate(ollama 호출)·llm_claim_validate 를 쓰는 decompose_corpus,
+    # scripts/enrich_kipris_biblio.py 가 이미 임포트하고 있었으나 선언이 없었다(하류 대장 D-24).
+    "requests>=2.31",
+    # KIPRIS 수집 경로 — CR-008·CR-011 이 이미 paper_data 의 수집기·응답 파서를 통해
+    # 이 둘을 쓰고 있었으나 선언이 없었다. requests 와 같은 종류의 누락이다(D-24).
+    # xmltodict: KiprisClient 가 XML 응답을 dict 로 바꾸는 데 쓴다.
+    # python-dotenv: 수집기가 .env 의 KIPRIS_API_KEY 를 읽는 데 쓴다.
+    "xmltodict>=0.13",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# Embedding-based alignment (GPU recommended)
+align = [
+    "sentence-transformers>=3.0",
+]
+# Baseline retrieval evaluation for SDKB-Match PriorArt
+priorart = [
+    "scikit-learn>=1.4",
+]
+# Notebook execution
+notebook = [
+    "jupyter>=1.0",
+    "nbconvert>=7.16",
+]
+# Interactive visualization (GitHub Pages demo)
+viz = [
+    "pyvis>=0.3.2",
+    "networkx>=3.2",
+]
+# Korean morphological analysis (notebook 07 patent-text lift; optional —
+# the bridge falls back to the deterministic substring scan without it)
+nlp = [
+    "kiwipiepy>=0.17",
+]
+# Development & testing
+dev = [
+    "pytest>=8.2",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+]
+# Full pipeline (all extras)
+full = ["sdkb[align,priorart,notebook,viz,nlp,dev]"]
+
+[project.scripts]
+sdkb-parse              = "scripts.parse_baseline:main"
+sdkb-convert            = "scripts.convert_rdf:main"
+sdkb-align              = "scripts.align_candidates:main"
+sdkb-validate           = "scripts.validate_shacl:main"
+sdkb-ingest-sirp        = "scripts.ingest_rejected_patents:main"
+sdkb-sirp-pairs         = "scripts.build_prior_art_pairs:main"
+sdkb-sirp-problems      = "scripts.sample_problems:main"
+sdkb-build-viz          = "scripts.build_viz:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["config*", "scripts*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

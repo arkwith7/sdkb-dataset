@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-08-15T01:02:47.876731+00:00",
+  "source_rev": "working-tree",
+  "files": 184,
+  "dataset_scrub": {
+    "rows": 1000,
+    "abstract": 1000,
+    "claim1": 1000,
+    "claims_full_texts": 13685
+  },
+  "private_docs_excluded": [],
+  "not_allowlisted_count": 497,
+  "not_allowlisted_by_dir": {
+    "(root)": 1,
+    ".github": 1,
+    "data": 445,
+    "docs": 28,
+    "notebooks": 8,
+    "scripts": 14
+  },
+  "private_blocks_stripped": {
+    "Makefile": 22,
+    "README.ko.md": 17,
+    "README.md": 27,
+    "docs/README.md": 35
+  },
+  "dead_links_flattened": {
+    "CHANGELOG.md": 2,
+    "README.ko.md": 14,
+    "README.md": 12,
+    "docs/README.md": 9,
+    "docs/dataset_rejected_patents_card.md": 2,
+    "docs/datasheet.md": 2,
+    "docs/ontology_guide.md": 5,
+    "docs/semiconductor_industry_rejected_patents_schema.md": 2
+  },
+  "absolute_paths_scrubbed": {
+    "data/reports/b_layer_query_collection.json": 1
+  },
+  "notebook_outputs_stripped": {}
+}
