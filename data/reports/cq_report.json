@@ -72,7 +72,7 @@
       "rows": 0,
       "expect_min": 1,
       "passed": false,
-      "seconds": 0.054,
+      "seconds": 0.053,
       "error": null
     },
     {
@@ -153,7 +153,7 @@
       "rows": 0,
       "expect_min": 1,
       "passed": false,
-      "seconds": 0.017,
+      "seconds": 0.02,
       "error": null
     },
     {
@@ -171,7 +171,7 @@
       "rows": 3134,
       "expect_min": 1,
       "passed": true,
-      "seconds": 0.545,
+      "seconds": 0.534,
       "error": null
     },
     {
@@ -180,7 +180,7 @@
       "rows": 0,
       "expect_min": 1,
       "passed": false,
-      "seconds": 0.144,
+      "seconds": 0.148,
       "error": null
     },
     {
@@ -189,7 +189,7 @@
       "rows": 18,
       "expect_min": 1,
       "passed": true,
-      "seconds": 0.021,
+      "seconds": 0.022,
       "error": null
     },
     {
@@ -198,7 +198,7 @@
       "rows": 6,
       "expect_min": 1,
       "passed": true,
-      "seconds": 131.714,
+      "seconds": 129.34,
       "error": null
     },
     {
@@ -207,7 +207,7 @@
       "rows": 3,
       "expect_min": 1,
       "passed": true,
-      "seconds": 0.023,
+      "seconds": 0.022,
       "error": null
     },
     {
@@ -243,7 +243,7 @@
       "rows": 395,
       "expect_min": 1,
       "passed": true,
-      "seconds": 0.849,
+      "seconds": 0.843,
       "error": null
     },
     {
@@ -252,7 +252,7 @@
       "rows": 38,
       "expect_min": 1,
       "passed": true,
-      "seconds": 0.009,
+      "seconds": 0.008,
       "error": null
     },
     {
@@ -279,7 +279,7 @@
       "rows": 12,
       "expect_min": 1,
       "passed": true,
-      "seconds": 0.003,
+      "seconds": 0.004,
       "error": null
     },
     {
