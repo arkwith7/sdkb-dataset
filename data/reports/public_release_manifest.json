@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-15T13:43:13.635365+00:00",
+  "generated_at": "2026-08-19T15:31:49.493010+00:00",
   "source_rev": "working-tree",
-  "files": 193,
+  "files": 323,
   "dataset_scrub": {
     "rows": 1000,
     "abstract": 1000,
@@ -29,6 +29,7 @@
     "CHANGELOG.md": 1,
     "README.ko.md": 14,
     "README.md": 12,
+    "benchmark/supplementary/S6-preregistration-crosswalk.md": 2,
     "docs/README.md": 9,
     "docs/dataset_rejected_patents_card.md": 2,
     "docs/datasheet.md": 2,
@@ -36,6 +37,12 @@
     "docs/semiconductor_industry_rejected_patents_schema.md": 2
   },
   "absolute_paths_scrubbed": {
+    "benchmark/assets/fault_baseline.json": 1,
+    "benchmark/assets/fault_matrix.json": 126,
+    "benchmark/assets/fault_matrix_holdout.json": 72,
+    "benchmark/assets/fault_matrix_n03.json": 9,
+    "benchmark/assets/fault_matrix_n03adv.json": 9,
+    "benchmark/assets/ir_effort_test.md": 1,
     "data/reports/b_layer_query_collection.json": 1
   },
   "notebook_outputs_stripped": {}
