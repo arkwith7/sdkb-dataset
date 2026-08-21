@@ -2,7 +2,7 @@
   "_README": "릴리스 자산의 무결성 기록. 하류는 이 해시로 자기 스냅샷을 검증한다. 해시는 이 공개 트리의 파일 바이트에서 계산되었다(비공개 원본이 아니다). 생성기: scripts/build_provenance.py — 손으로 고치지 않는다.",
   "schema_version": 2,
   "release": {
-    "upstream_commit": "cf83415424b9a99aae587f99dc46efa6764b7f90",
+    "upstream_commit": "b8495b27e1d67d7d82f94bd94c8987b797b86bc9",
     "assets_count": 324
   },
   "assets": {
@@ -11,16 +11,16 @@
       "bytes": 8256
     },
     ".zenodo.json": {
-      "sha256": "4b2e7d230016517b80214ddd9315724ba3e4321e2d0297fdbc25d5e8f04517fa",
-      "bytes": 2146
+      "sha256": "4710bb75c579eea552e72f1822addde6c6b941bde20959584c8a676897d60fc7",
+      "bytes": 2148
     },
     "CHANGELOG.md": {
-      "sha256": "6d80603ec8602cfc059086f895dac905a6c3711aaa6e9d1f89bbe154709a9d10",
-      "bytes": 82013
+      "sha256": "0724af0f3a52a90292f12fc91198da783f5e2fd0d54e20d47f5b96396694afac",
+      "bytes": 84062
     },
     "CITATION.cff": {
-      "sha256": "c67bc533252c08e00d81dd722726b7f09dcd80cc33290cd9c94fa8a58dbbe448",
-      "bytes": 2092
+      "sha256": "ad20433eb584b98546f6f090d41b762f0107b62f44d4013bb7b4dea952af3b48",
+      "bytes": 2477
     },
     "LICENSE-CODE.txt": {
       "sha256": "19de996758d21af28ef6619effd630c0558ce48c43355a02f95bb0a39e3da2c6",
@@ -35,12 +35,12 @@
       "bytes": 17416
     },
     "README.ko.md": {
-      "sha256": "331eceaa570565c95cdc1abc78b8423f5a6204a5afd8c761edae82b22d99c88d",
-      "bytes": 23145
+      "sha256": "4a11cac8c41ca051191d7c05bce494c0403c09c97c49e566bc5da7ed23fb4898",
+      "bytes": 23475
     },
     "README.md": {
-      "sha256": "0944ea229c3368fbf2013588ba0fed22721089cf3e3b1dcb4d3f7dfa8b57080b",
-      "bytes": 22470
+      "sha256": "c276a9e06d29035ee4e9aff51d92810a4599b2e208bd18ee6f51f56c35e98029",
+      "bytes": 22813
     },
     "benchmark/CROSSWALK.md": {
       "sha256": "95f0bd5adffc150c4316e7caef47364671561e996fd8d4de9a2c8f04970a3b45",
@@ -671,8 +671,8 @@
       "bytes": 5414
     },
     "data/reports/cq_report.json": {
-      "sha256": "9f7fac5a7c300069528ba2cbeb3e91437acf464d29df74b55a3527d8fcc02f45",
-      "bytes": 7644
+      "sha256": "d175aff6f1085f1eb9ef0c87b7c24484749bd98327e1a027304271530a7f4121",
+      "bytes": 7646
     },
     "data/reports/fulltext_corpus_report.json": {
       "sha256": "e13ca2da9d4fef1e9f00d34e519e35668858c90475ef86d2c0f96c58835b5758",
@@ -683,11 +683,11 @@
       "bytes": 4478
     },
     "data/reports/public_release_check.json": {
-      "sha256": "12d3efaf545ce5df0a7f526d20255949f4b705ce99076893a4a6ecf3aa12159b",
+      "sha256": "9b739877124186a2cd0f7ab6a6033c921d8ed711156f69e3314291ccb64829ba",
       "bytes": 464
     },
     "data/reports/public_release_manifest.json": {
-      "sha256": "c3829a7b7f04265d87a4844750f926137356843631637b574f08f2ffc76d3fca",
+      "sha256": "a30fec1174dbe7a3595fc5f57d61bc3f81f5e7cf1f63be8c15475628c4ceee6d",
       "bytes": 1352
     },
     "data/reports/refetch_rejected_patents.json": {
